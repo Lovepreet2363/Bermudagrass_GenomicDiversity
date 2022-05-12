@@ -4,7 +4,7 @@
 #Reading HapMap data file 
 alldata <- read.table("HapMap.hmp.txt", header = T)
 
-#Reading files containing details about accessions 
+#Reading file containing details about accessions 
 Names <- read.csv("Accesssions_Information.csv", header = T)
 
 #Division into first cluster 
