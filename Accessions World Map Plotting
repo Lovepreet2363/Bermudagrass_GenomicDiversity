@@ -1,0 +1,53 @@
+#####Plottong of Accessions on the World Map#########
+
+#Reading the file contaning coordinates of the origin of various accessions in the panel 
+Coord <- read.csv("1. Accessions_Coordinates.csv" , header = T)
+
+#Importing required packages
+library(ggplot2)
+library(ggmap)
+
+#Getting empty world map
+#There are many map types which can be used, toner-lite has been used here 
+world <- get_stamenmap(
+  bbox = c(left = -180, bottom = -57, right = 179, top = 82.1), 
+  maptype = "toner-lite",
+  zoom = 2)
+
+
+#Plotting accessions and coloring them
+ggmap(world) + # creates the map "background"
+  geom_point(data = Coord, 
+             aes(x = Longitude, y = Latitude, color=Cluster), 
+             alpha = 1/2, 
+             size = 2) +theme_classic()+
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())+
+  theme(axis.title.y =element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank())+
+  theme(panel.background=element_rect(colour="black"))+scale_color_manual(values = c("Cluster A" = "purple",
+                                                                                     "Cluster B" ="red",
+                                                                                     "Cluster C"= "yellow",
+                                                                                     "Cluster D" = "green"))
+
+
+#Producing final quality figure
+tiff("Map_Accessions1.tiff", width = 6, height = 4, units = "in", res = 800)
+ggmap(world) + # creates the map "background"
+  geom_point(data = Coord, 
+             aes(x = Longitude, y = Latitude, color=Cluster), 
+             alpha = 1/2, 
+             size = 2) +theme_classic()+
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())+
+  theme(axis.title.y =element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank())+
+  theme(panel.background=element_rect(colour="black"))+scale_color_manual(values = c("Cluster A" = "purple",
+                                                                                     "Cluster B" ="red",
+                                                                                     "Cluster C"= "yellow",
+                                                                                     "Cluster D" = "green"))
+dev.off()
