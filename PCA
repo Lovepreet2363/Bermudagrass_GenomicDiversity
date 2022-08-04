@@ -1,0 +1,55 @@
+#Principal Component Analysis 
+
+#Importing packages
+library(ggplot2)
+
+#Reading PC matrix 
+pca3 <- read.csv("Final PCA1.csv", header = T)
+
+#Simple plotting 
+# Plot PCA 1 and PCA 2
+ggplot(pca3,aes(x=PC1,y=PC2)) + 
+  geom_point() + ggtitle ("PC1 & PC2 with Three PCA")
+
+
+# Plot PCA 2 and PCA 3
+ggplot(pca3,aes(x=PC2,y=PC3)) + 
+  geom_point() + ggtitle ("PC2 & PC3 with Three PCA")
+
+# Plot PCA 3 and PCA 1
+ggplot(pca3,aes(x=PC3,y=PC1)) + 
+  geom_point()  + ggtitle ("PC3 & PC1 with Three PCA")
+
+#3D Scatterplot All 3 PcAs
+library(scatterplot3d)
+scatterplot3d(pca3$PC1, pca3$PC2, pca3$PC3, pch=20, color = "blue",
+              xlab = "PC1", ylab = "PC2", zlab = "PC3")  
+
+#Plotting according to continents
+ggplot(pca3,aes(x=PC1,y=PC2)) + 
+  geom_point(aes(color = Origin, alpha = 1/100 )) + 
+  scale_fill_manual(values = c("Africa" = "Red" ,"Asia" = "charteruse3" ,"Australia" = "brown" ,"Europe" = "yellow" ,"North america" = "blue2"))
+
+ggplot(pca3,aes(x=PC2,y=PC3)) + 
+  geom_point(aes(color = Origin, alpha = 1/100 )) + 
+  scale_fill_manual(values = c("Africa" = "Red" ,"Asia" = "charteruse3" ,"Australia" = "brown" ,"Europe" = "yellow" ,"North america" = "blue2"))
+
+
+#########################################################################################
+#-------FInal Plotting and Coloring according to ADMIXTURE Clusters----------------------
+tiff("PC12.tiff", width = 6, height = 4, units = "in", res = 800)
+ggplot(pca3,aes(x=PC1,y=PC2)) + 
+  geom_point(aes(color = (Cluster), alpha = 1/100)) + 
+  scale_color_manual(values = c("1" = "blue2" ,"2" = "sky blue" ,"3" = "yellow" ,"4" = "red")) + scale_alpha(guide = 'none')+ 
+  theme(panel.background = element_rect(fill = 'white', colour = 'black'))+
+  xlab("PC1 (15.6 %)") + ylab("PC2 (10.1 %)")
+dev.off()
+
+tiff("PC23.tiff", width = 6, height = 4, units = "in", res = 800)
+ggplot(pca3,aes(x=PC2,y=PC3)) + 
+  geom_point(aes(color = (Cluster), alpha = 1/100)) + 
+  scale_color_manual(values = c("1" = "blue2" ,"2" = "sky blue" ,"3" = "yellow" ,"4" = "red")) + scale_alpha(guide = 'none')+ 
+  theme(panel.background = element_rect(fill = 'white', colour = 'black'))+
+  xlab("PC2 (10.1 %)") + ylab("PC3 (3.8 %)")
+dev.off()
+
