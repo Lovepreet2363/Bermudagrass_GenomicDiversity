@@ -1,0 +1,115 @@
+#Bermudagrass SNP Analysis
+
+# importing the genotypic data file
+bermuda = read.table("HapMap.hmp.txt", header=T,sep="\t",comment.char="",stringsAsFactors=F )
+
+#Looking at transitions and transversions 
+table(bermuda[,2])
+
+data <- table(bermuda[,13])
+data
+
+#import hmc (count) file
+bermuda.count = read.table("HapMap.hmc.txt", header=T,sep="\t",comment.char="",stringsAsFactors=F )
+
+#load package to convert SNPs into 0,1,and 2 format ( 0 is homozygote, 1 is heterozygote and 2 is another type of homozygote.)
+library(adegenet) 
+hapbermudagenlight <- function(file){
+  require(adegenet)
+  hapmap <- read.table(file, header=TRUE, row.names=1, sep="\t",
+                       stringsAsFactors=FALSE)[,-(2:10)]
+  samples <- names(hapmap)[-1]
+  loci <- row.names(hapmap)
+  
+  s <- as.integer(c(0,1,2,NA))
+  ac <- s
+  ag <- s
+  at <- s
+  cg <- s
+  ct <- s
+  gt <- s
+  names(ac) <- c("A","M","C","N")
+  names(ag) <- c("A","R","G","N")
+  names(at) <- c("A","W","T","N")
+  names(cg) <- c("C","S","G","N")
+  names(ct) <- c("C","Y","T","N")
+  names(gt) <- c("G","K","T","N")
+  conv <- list(ac,ac,ag,ag,at,at,cg,cg,ct,ct,gt,gt)
+  names(conv) <- c("A/C","C/A","A/G","G/A","A/T","T/A","C/G","G/C",
+                   "C/T","T/C","G/T","T/G")
+  
+  S <- length(samples)
+  SBlist <- vector(mode="list",S)   
+  for(i in 1:S){
+    mygen <- mapply(function(type,gen) unname(conv[[type]][gen]),
+                    type=hapmap[[1]], gen=hapmap[[i+1]],
+                    SIMPLIFY=TRUE, USE.NAMES=FALSE)
+    
+    SBlist[[i]] <- new("SNPbin", mygen)
+  }
+  
+  
+  x <- new("genlight", SBlist)
+  locNames(x) <- loci
+  indNames(x) <- samples
+  
+  return(x)
+}
+bermudasnps <- hapbermudagenlight("HapMap.hmp.txt")
+
+bermudasnps = as.matrix(bermudasnps) 
+dim(bermudasnps)# 206 inds x 37496 snps
+sum(is.na(bermudasnps)) #2524096 missing data points
+
+#saving bermudasnps converted matrix file 
+write.csv(bermudasnps, "C:/Users/ls2203/OneDrive - Mississippi State University/Documents/Master's Data/GWAS Bermuda/SNP Analysis hapmap genlight converted geno 37496snps x 206obs.csv")
+
+
+# looking at SNP coverage
+#neww is used to indentify the last few columns to see which columns are associated with total counts#
+neww=as.matrix(bermuda.count[,206:212])
+cov = bermuda.count[,210]+bermuda.count[,211]
+
+#Saving coverage file 
+write.csv(cov,"C:/Users/ls2203/OneDrive - Mississippi State University/Documents/Master's Data/GWAS Bermuda/SNP Analysis cov.csv" )
+
+#Different plots for SNP coverage 
+hist(cov,breaks = 100)
+hist(cov,breaks = 100, xlim = c(0,5000), ylim = c(0,30000))
+cov1 = read.csv("SNP Analysis cov.csv", header = T)
+library(ggplot2)
+ggplot(cov1) + 
+  geom_histogram(aes(x=cov),col="red",fill="green") + xlim(0,35000)
+ggplot(cov1) + 
+  geom_histogram(aes(x=cov),col="red",fill="green") + xlim(0,5000)+ ylim(0,25000)
+
+library(esquisse)
+esquisser()
+
+ggplot(`cov1`) +
+  aes(x = Cov, y = SNP) +
+  geom_point(shape = "circle", size = 1.5, alpha = 1/10, colour = "#112446")+scale_x_continuous(breaks=seq(1930, 1940, 1))+
+  theme_minimal()
+
+tiff("Figure coverage1.tiff", width = 8, height = 4, units = "in", res = 800)
+ggplot(`cov1`) +
+  aes(x = Cov, y = SNP) +
+  geom_point(shape = "circle", size = 1.5,  alpha = 1/5, colour = "#112446") +
+  theme_minimal()  + labs(y="SNPs", x = "Coverage")
+dev.off()
+
+
+ggplot(`SNP Analysis cov.csv`) + 
+  aes(x = Cov, y = SNP) +
+  geom_point(shape = "circle", size = 1.5, colour = "#112446") +
+  theme_minimal()
+
+ggplot(`cov1`) +
+  aes(x = Cov, y = SNP) +
+  geom_line(size = 0.5, colour = "#112446") +
+  theme_minimal()
+
+ggplot(`cov1`) +
+  aes(x = Cov, y = SNP) +
+  geom_step(size = 0.5, colour = "#112446") +
+  theme_minimal()
