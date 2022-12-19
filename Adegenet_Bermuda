@@ -1,0 +1,90 @@
+#Adegenet Bermuda Analysis 
+
+library(adegenet)
+library(ape)
+library(pegas)
+library(seqinr)
+library(ggplot2)
+
+
+# Adapted from R codes developed by Dr. Lindsay V. Clark, 26 July 2015
+# Github: https://github.com/lvclark/R_genetics_conv
+# R function to import data from TASSEL's HapMap format to adegenet's genind format.
+# Previous version available at: http://dx.doi.org/10.13012/C5CC0XMJ
+# Example use:
+# mydata <- hapMap2genind("HapMap.hmp.txt")
+
+hapMap2genind <- function(file){
+  require(adegenet)
+  hapmap <- read.table(file, header=TRUE, row.names=1, sep="\t",
+                       stringsAsFactors=FALSE, comment.char = "")
+  samples <- scan(file, what = character(), nlines = 1)[-(1:11)]
+  conv <- c("AA", "CC", "TT", "GG", "AC", "AT", "AG", "CT", "CG", "TG", NA)
+  names(conv) <- c("A", "C", "T", "G", "M" , "W", "R", "Y", "S",  "K", "N")
+  mydf <- matrix(NA, nrow=dim(hapmap)[1], ncol=length(samples),
+                 dimnames=list(row.names(hapmap), samples))
+  for(i in 1:length(samples)){
+    mydf[,i] <- conv[hapmap[[i+10]]]
+  }
+  mydf <- as.data.frame(t(mydf))
+  x <- df2genind(mydf, type="codom", ncode=1)
+  return(x)
+}
+
+bermuda.snps <- hapMap2genind("HapMap.hmp.txt")
+
+# Add population factor (4 subpops deduced from Admixture):
+Subpop <- read.csv("2. Accessions_Clusters.csv", header = TRUE)
+# Sort taxa based on their order in genind object (bermuda.snps@tab)
+Subpop2 = Subpop[match(row.names(bermuda.snps@tab), Subpop$Taxa),]
+
+# Use 'pop' accessor of adegenet to set the pop slot.
+pop(bermuda.snps) <- c(Subpop2$Pop)
+
+# Test for Hardy-Weinberg equilibrium 
+bermuda.hwt <- hw.test(bermuda.snps, B=0)
+bermuda.hwt
+
+# Measuring and testing population structure (a.k.a F statistics)
+library(hierfstat)
+wc(bermuda.snps) # Overall measures of whole panel (206 inds x 37496 snps)
+# Fst: 0.3452424; # Fis: 0.4792712
+
+# Pairwise Fst based on Nei's estimator. This is this one we really need:
+matFst <- genet.dist(bermuda.snps, method = "Nei87")
+matFst
+
+#      D      A      B
+# A 0.3341              
+# B 0.3437 0.2016       
+# C 0.4553 0.3638 0.2336
+
+######################################################################
+### 
+sum(is.na(bermuda.snps@tab)) # There are 5048192 missing data
+X <- tab(bermuda.snps, freq = TRUE, NA.method = "mean")
+class(X)
+dim(X)
+X[1:5, 1:5]
+
+pca1 <- dudi.pca(X, scale = FALSE, scannf = FALSE, nf =3)
+barplot(pca1$eig[1:50], main = "PCA eigenvalues", col = heat.colors(50))
+
+tiff("PCA.tiff", width = 4, height = 3, units = "in", res = 300)
+s.class(pca1$li, pop(bermuda.snps))
+#title("PCA of bermudagrass dataset\naxes 1-2")
+add.scatter.eig(pca1$eig[1:20], nf= 3, 1, 2, posi = "topright")
+dev.off()
+
+# PCA in a colorful way:
+col <- funky(5)
+s.class(pca1$li, pop(bermuda.snps), xax = 1, yax = 3, col = transp(col, .6),
+        axesell = FALSE, cstar = 0, cpoint = 3, grid = FALSE)
+
+# Neighbour-joining tree
+myCol <- colorplot(pca1$l1,pca1$l1, transp=TRUE, cex=4)
+tre <- nj(dist(as.matrix(bermuda.snps@tab)))
+plot(tre, type="fan", cex=1, show.tip=FALSE)
+tiplabels(pch=20, col=myCol, cex=1)
+
+save.image("Bermuda.RData")
